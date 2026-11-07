@@ -4,6 +4,8 @@
 
 [org 0x7C00]
 
+SECTION .text
+
 stage1_start:
   ; 1st stage of bootlaoder
 
@@ -22,14 +24,14 @@ stage1_start:
                  ; be below stage 1 bootloader
   mov sp, bp
   mov ah, 0x02
-  mov al, 0x04
+  mov al, stage2_sectors
   mov ch, 0x00
   mov dh, 0x00
   mov cl, 0x02 ; we will read from 2nd sector
                ; because first is boot sector
 
   mov bx, 0x7E00 ; data of 2nd stage bootloader will be loaded
-                 ; at memory address 0x0000:7E00 exactly where
+                 ; at memory address 0x0000:0x7E00 exactly where
                  ; the stage 1 bootloader is finished
                  ; [es:bx]
   
@@ -40,27 +42,41 @@ stage1_start:
   jmp 0x0000:0x7E00
 
 disk_err:
-  mov bx, stage1_disk_err_msg
+  mov bx, stage1_disk_err_msg1
   call print_string
+  mov bx, stage1_disk_err_msg2
+  call print_string
+  and ax, 0xFF00
+  mov dx, ax
+  call print_hex
   jmp $
 
-stage1_disk_err_msg:
+stage1_disk_err_msg1:
   db "Error occured in reading stage2", 0
 
-BOOT_DRIVE: 
+stage1_disk_err_msg2:
+  db 0x0D, 0x0A, "Error code: ", 0
+
+%include "print_string.asm"
+
+BOOT_DRIVE:
   db 0x00
 
-  times 510-($-$$) db 0
-  dw 0xaa55
+times 510-($-$$) db 0
+dw 0xaa55
  
 stage2_start:
   ; 2nd stage of bootloader
-  mov dh, 5 ; we have to read 5 sectors
+  mov dx, 0x0000 ; clearing dx to store new value
+  mov dh, 0x05 ; we have to read 5 sectors
   mov dl, [BOOT_DRIVE]
+  mov cx, 0x0000
+  add cl, 0x01
+  add cl, stage2_sectors
+  add cl, 0x01 ; so cl will point to the next sector that I want to read
+  mov bx, 0x0000
+  mov bx, 0x9000
   call disk_read
-
-  ; we will print the first words of 5th and 6th sector
-  ; that are loaded into memory
 
   mov dx, [0x9000]
   call print_hex
@@ -70,9 +86,17 @@ stage2_start:
 
   jmp $
 
-  %include "print_hex.asm"
   %include "disk_reader.asm"
-  %include "print_string.asm"
+  %include "print_hex.asm"
 
-  ; we will fill sector 6th sector with some data
-  times 2048-($-$$) db 0
+stage2_end:
+
+stage2_bytes equ (stage2_end - stage2_start)
+stage2_sectors equ (stage2_bytes + 511)/512
+
+; we will fill our extra space in the with some data
+times (stage2_sectors * 512)- stage2_bytes db 0
+
+; we will write the other two sectors with some data
+times 256 dw 0xabab
+times 256 dw 0xcdcd

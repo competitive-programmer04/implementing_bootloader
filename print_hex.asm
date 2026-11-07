@@ -2,14 +2,6 @@
 ; code for printing hexadecimal value
 ;
 
-xor ax, ax
-mov ds, ax
-mov dx, 0x1fb6
-call print_hex
-mov bx, HEX_OUT
-call print_string
-jmp $
-
 print_hex:
   ; modifying hex_out to become 0x1fb6
   mov bx, HEX_OUT
@@ -33,7 +25,12 @@ print_hex:
   and al, 0x0F
   call convert_to_ascii
   mov byte [bx], al
+  jmp .printing_string
   ret
+
+.printing_string:
+  mov bx, HEX_OUT
+  call print_string
 
 convert_to_ascii:
   cmp al, 10

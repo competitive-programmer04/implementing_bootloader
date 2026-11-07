@@ -8,12 +8,7 @@ disk_read:
   mov al, dh ; dh will store the number of sectors that we will read
   mov ch, 0x00 ; cylinder 0 (outermost track)
   mov dh, 0x00 ; top surface
-  mov cl, 0x06 ; we will read from sixth sector
-               ; because first is boot sector and 
-               ; other 4 sectors are second stage of
-               ; bootloader
-  
-  mov bx, 0x9000 ; load data at 0x0000:0x9000
+
   int 0x13 ; for disk i/o
   jc disk_error
   ; just an extra check
@@ -27,6 +22,7 @@ disk_error:
   call print_string
   mov bx, stage2_disk_err_msg2
   call print_string
+  and ax, 0xFF00
   mov dx, ax
   call print_hex
   jmp $
