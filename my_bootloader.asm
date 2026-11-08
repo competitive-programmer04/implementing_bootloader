@@ -78,7 +78,7 @@ stage2_end:
 stage2_bytes equ (stage2_end - stage2_start)
 stage2_sectors equ (stage2_bytes + 511)/512
 
-; we will fill our extra space in the with some data
+; we will fill our extra space with some data
 times (stage2_sectors * 512)- stage2_bytes db 0
 
 ; we will write the other 5 sectors with some data
