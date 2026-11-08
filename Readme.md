@@ -10,7 +10,7 @@
  sudo apt install qemu-system
  ```
 
-## How to and compile and run it
+## How to compile and run it
 
 ```
 nasm my_bootloader.asm -f bin -o my_bootloader.bin
