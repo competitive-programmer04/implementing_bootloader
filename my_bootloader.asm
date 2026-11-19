@@ -67,11 +67,40 @@ stage2_start:
   mov dx, [0x9000 + 512]
   call print_hex
 
-  jmp $
+  mov bx, NEWLINE_MSG
+  call print_string
+
+  mov bx, MY_MSG
+  call print_string
+
+  mov bx, NEWLINE_MSG
+  call print_string
+
+  call switch_to_pm
+
+  NEWLINE_MSG:
+    db 0x0D, 0x0A, 0
+  
+  MY_MSG:
+    db "Jumping from real mode to protected mode", 0
 
   %include "disk_reader.asm"
   %include "print_hex.asm"
   %include "print_string.asm"
+
+%include "gdt.asm"
+%include "print_string_pm.asm"
+%include "switch_to_pm.asm"
+
+[bits 32]
+
+BEGIN_PM:
+  mov ebx, PROT_MODE_MSG
+  call print_string_pm
+  jmp $
+
+PROT_MODE_MSG:
+  db "Successfully jumped to 32-bit protected mode", 0
 
 stage2_end:
 
