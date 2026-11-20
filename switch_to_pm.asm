@@ -32,5 +32,13 @@ init_pm:
   mov ebp, 0x9fc00 ; starting the stack in protected mode from the 
                    ; top of the free 637KB address space in the real
                    ; mode 1MB ram
-mov esp, ebp
-call BEGIN_PM
+  mov esp, ebp
+  call .BEGIN_PM
+
+.BEGIN_PM:
+  mov ebx, PROT_MODE_MSG
+  call print_string_pm
+  jmp $
+
+PROT_MODE_MSG:
+  db "Successfully jumped to 32-bit protected mode", 0

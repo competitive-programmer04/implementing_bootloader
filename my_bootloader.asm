@@ -70,37 +70,71 @@ stage2_start:
   mov bx, NEWLINE_MSG
   call print_string
 
-  mov bx, MY_MSG
+  mov bx, ASK_USER
   call print_string
 
-  mov bx, NEWLINE_MSG
-  call print_string
+  mov ah, 0x00 ; waiting for the user to press key
+  int 0x16
 
-  call switch_to_pm
+  cmp al, 0x70 ; p
+  je MY_PROT_MODE
 
-  NEWLINE_MSG:
-    db 0x0D, 0x0A, 0
-  
-  MY_MSG:
-    db "Jumping from real mode to protected mode", 0
+  cmp al, 0x67 ; g
+  je MY_GAME_MODE
+
+  jmp $
 
   %include "disk_reader.asm"
   %include "print_hex.asm"
   %include "print_string.asm"
 
-%include "gdt.asm"
-%include "print_string_pm.asm"
-%include "switch_to_pm.asm"
+  
+  ASK_USER:
+    db "Type p for protected mode and g for game mode", 0
+   
 
-[bits 32]
+MY_PROT_MODE:
+   mov bx, NEWLINE_MSG
+   call print_string
 
-BEGIN_PM:
-  mov ebx, PROT_MODE_MSG
-  call print_string_pm
-  jmp $
+   mov bx, MY_MSG
+   call print_string
 
-PROT_MODE_MSG:
-  db "Successfully jumped to 32-bit protected mode", 0
+   call switch_to_pm
+
+   %include "gdt.asm"
+   %include "print_string_pm.asm"
+   %include "switch_to_pm.asm"
+
+   MY_MSG:
+      db "Jumping from real mode to protected mode", 0
+
+MY_GAME_MODE:
+  call my_game
+  mov bx, END_GAME_MSG
+  mov ax, 0xB800 ; 80x25 vga text array starts at 0xB800
+  mov es, ax
+  xor di, di ; first cell
+  mov ah, 0x0F ; white on black background
+  my_print_string:
+    mov al, [bx]
+    cmp al, 0x00
+    je hang
+    mov [es:di], ax
+    add bx, 0x01 ; moving bx to next character
+    add di, 0x02 ; moving di to next memory cell
+    jmp my_print_string
+  
+  hang:
+    jmp $
+
+  END_GAME_MSG:
+    db "Quiting from game", 0
+  
+  %include "my_bootloader_game.asm"
+
+NEWLINE_MSG:
+    db 0x0D, 0x0A, 0
 
 stage2_end:
 
