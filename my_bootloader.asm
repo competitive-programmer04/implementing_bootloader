@@ -124,26 +124,33 @@ MY_GAME_MODE:
             ; will from cx = something -> 0
   xor di, di
   mov ah, 0x0F
-  mov al, [bx]
-  cmp al, 0x00
-  je graphics_text_loop
-  mov word [es:di], ax
-  add di, 0x2
-  add bx, 0x1
+  print_my_string:
+    mov al, [bx]
+    cmp al, 0x00
+    je graphics_text_loop
+    mov [es:di], ax
+    add di, 0x2
+    add bx, 0x1
+    jmp print_my_string
 
   graphics_text_loop:
     mov ax, 0x0000 
     int 0x16
     cmp al, 0x79 ; y
     je MY_GAME_MODE
-    jne hang ; n
+    cmp al, 0x59 ; Y
+    je MY_GAME_MODE
+    cmp al, 0x6E ; n
+    je hang
+    cmp al, 0x4E ; N
+    je hang
     jmp graphics_text_loop
   
   hang:
     jmp $
 
   END_GAME_MSG:
-    db "Game Over", 0x0D, 0x0A, "Want to play again [y/n]: ", 0
+    db "Game Over! Want to play again [y/n]: ", 0
   
   %include "my_bootloader_game.asm"
 
