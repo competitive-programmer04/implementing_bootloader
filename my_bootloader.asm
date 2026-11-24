@@ -112,24 +112,38 @@ MY_PROT_MODE:
 MY_GAME_MODE:
   call my_game
   mov bx, END_GAME_MSG
-  mov ax, 0xB800 ; 80x25 vga text array starts at 0xB800
+  mov ax, 0xB800 ; 80x25 vga text array starts at 0xB8000
   mov es, ax
   xor di, di ; first cell
-  mov ah, 0x0F ; white on black background
-  my_print_string:
-    mov al, [bx]
-    cmp al, 0x00
-    je hang
-    mov [es:di], ax
-    add bx, 0x01 ; moving bx to next character
-    add di, 0x02 ; moving di to next memory cell
-    jmp my_print_string
+  mov ax, 0x0720 ; ah = 0x07(grey-on-black), al = 0x20(space character)
+  mov cx, 0x07D0 ; 80 x 25 vga text mode = 2000 cells
+  cld ; used to unset DF(direction Flag)
+  rep stosw ; reads the value of ax and write at [es:di] 
+            ; if DF is 0 -> di += 2 else if DF = 1 -> di -= 2
+            ; it decrements cx after each iteration and loop
+            ; will from cx = something -> 0
+  xor di, di
+  mov ah, 0x0F
+  mov al, [bx]
+  cmp al, 0x00
+  je graphics_text_loop
+  mov word [es:di], ax
+  add di, 0x2
+  add bx, 0x1
+
+  graphics_text_loop:
+    mov ax, 0x0000 
+    int 0x16
+    cmp al, 0x79 ; y
+    je MY_GAME_MODE
+    jne hang ; n
+    jmp graphics_text_loop
   
   hang:
     jmp $
 
   END_GAME_MSG:
-    db "Quiting from game", 0
+    db "Game Over", 0x0D, 0x0A, "Want to play again [y/n]: ", 0
   
   %include "my_bootloader_game.asm"
 

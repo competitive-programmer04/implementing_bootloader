@@ -36,9 +36,21 @@ init_pm:
   call .BEGIN_PM
 
 .BEGIN_PM:
-  mov ebx, PROT_MODE_MSG
-  call print_string_pm
-  jmp $
+  mov edx, 0xB8000 ; storing the address of 80x25 vga text array in edx
+  mov ecx, 0
+  clear_screen:
+    cmp ecx, 0x07D0 ; 0x7D0 = 2000 -> number of cells in the array
+    jge .done
+    mov ax, 0x0720 ; ah = 0x07(grey-on-black), al = 0x20(space character) 
+    mov [edx], ax
+    add edx, 0x2
+    add ecx, 0x1
+    jmp clear_screen
+
+  .done:
+    mov ebx, PROT_MODE_MSG
+    call print_string_pm
+    jmp $
 
 PROT_MODE_MSG:
   db "Successfully jumped to 32-bit protected mode", 0
