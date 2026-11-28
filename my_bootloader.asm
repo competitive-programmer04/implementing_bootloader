@@ -38,7 +38,7 @@ stage1_start:
   jc disk_err
 
   ; jump to stage 2
-  jmp 0x0000:0x7E00
+  jmp stage2_start
 
 disk_err:
   jmp $ ; halt
@@ -58,13 +58,13 @@ stage2_start:
   add cl, 0x01
   add cl, stage2_sectors
   add cl, 0x01 ; so cl will point to the next sector that I want to read
-  mov bx, 0x9000
+  mov bx, stage2_end
   call disk_read
 
-  mov dx, [0x9000]
+  mov dx, [stage2_end]
   call print_hex
 
-  mov dx, [0x9000 + 512]
+  mov dx, [stage2_end + 512]
   call print_hex
 
   mov bx, NEWLINE_MSG
@@ -112,7 +112,7 @@ MY_PROT_MODE:
 MY_GAME_MODE:
   call my_game
   mov bx, END_GAME_MSG
-  mov ax, 0xB800 ; 80x25 vga text array starts at 0xB8000
+  mov ax, 0xB800 ; 80x25 vga text array starts at 0xB800:0x0000 = 0xB8000
   mov es, ax
   xor di, di ; first cell
   mov ax, 0x0720 ; ah = 0x07(grey-on-black), al = 0x20(space character)
@@ -150,7 +150,7 @@ MY_GAME_MODE:
     jmp $
 
   END_GAME_MSG:
-    db "Game Over! Want to play again [y/n]: ", 0
+    db "Game Over Want to play again [y/n]: ", 0
   
   %include "my_bootloader_game.asm"
 
